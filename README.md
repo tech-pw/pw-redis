@@ -18,7 +18,7 @@ As stated in the official [ioredis documentation](https://github.com/redis/iored
 
 > "All keys in a pipeline should belong to slots served by the same node, since ioredis sends all commands in a pipeline to the same node."
 
-This means that when executing multiple commands in a pipeline, all keys must belong to the same Redis slot, as `ioredis` sends the pipeline commands to a single node. If the keys interact with different shards, pipeline commands would fail with error `All the keys in a pipeline command should belong to the same slot`
+This means that when executing multiple commands in a pipeline, all keys must belong to the same Redis slot, as `ioredis` sends the pipeline commands to a single node. If the keys interact with different shards, pipeline commands would fail with error.
 
 Due to this limitation, pipelining cannot be reliably used in Redis clusters with ioredis, leading to increased network latency as each command is executed individually instead of being batched together.
 
@@ -118,20 +118,6 @@ The `clusterPipeline` method takes an array of Redis commands (e.g., [['set', 'k
 - **Pipeline Execution**: Once the commands are grouped by node, they are executed in parallel on each node, ensuring better performance when dealing with large pipelines.
 - **Result Handling**: Results from each node are merged and returned in the same order as the original commands.
 
-## API Documentation
-
-`clusterPipeline(commands: [string, ...any][]): Promise<any[]>`
-
-### Parameters:
-
-- `commands`: An array of Redis commands, where each command is an array starting with the command name and followed by its arguments.
-  - Example: [['set', 'key1', 'value1'], ['get', 'key1']].
-
-### Returns:
-
-- A Promise that resolves to an array of command results in the same order as they were provided.
-  - Example: [ ['OK'], ['value1'] ].
-
 ## Redis and Cluster
 
 All the normal ioredis Redis and Cluster functionality remains available. This library only adds the `clusterPipeline` method to Cluster.
@@ -162,11 +148,15 @@ After implementing partial pipeline optimization, we observed significant API re
 | With Pipeline     | 42ms (↓19%) | 101ms (↓15%)| 224ms (↓15%)|
 
 #### Latency Comparison
-![API 1 Avg Latency Comparison](./images/api1_avg_latency.png)
-
-![API 1 P95 Latency Comparison](./images/api1_p95_latency.png)
-
-![API 1 P99 Latency Comparison](./images/api1_p99_latency.png)
+<p align="center">
+  <img src="./images/api1_avg_latency.png" alt="API 2 Avg Latency Comparison" width="80%"/>
+</p>
+<p align="center">
+  <img src="./images/api1_p95_latency.png" alt="API 2 P95 Latency Comparison" width="80%"/>
+</p>
+<p align="center">
+  <img src="./images/api1_p99_latency.png" alt="API 2 P99 Latency Comparison" width="80%"/>
+</p>
 
 ### API 2
 
@@ -176,11 +166,15 @@ After implementing partial pipeline optimization, we observed significant API re
 | With Pipeline    | 31ms (↓14%) | 57ms (↓27%) | 202ms (↓13%)|
 
 #### Latency Comparison
-![API 2 Avg Latency Comparison](./images/api2_avg_latency.png)
-
-![API 2 P95 Latency Comparison](./images/api2_p95_latency.png)
-
-![API 2 P99 Latency Comparison](./images/api2_p99_latency.png)
+<p align="center">
+  <img src="./images/api2_avg_latency.png" alt="API 2 Avg Latency Comparison" width="80%"/>
+</p>
+<p align="center">
+  <img src="./images/api2_p95_latency.png" alt="API 2 P95 Latency Comparison" width="80%"/>
+</p>
+<p align="center">
+  <img src="./images/api2_p99_latency.png" alt="API 2 P99 Latency Comparison" width="80%"/>
+</p>
 
 ## Key Learnings & Next Steps
 - **Pipeline execution improved response times** significantly in cluster mode.
