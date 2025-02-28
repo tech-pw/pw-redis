@@ -1,11 +1,11 @@
 import Redis, { Cluster } from 'ioredis';
 
 class ExtendedClusterRedis extends Cluster {
+  private nodeSlotRanges = []
 
-  async clusterPipeline(commands: [string, ...any][]): Promise<any[]> {
-    const pipelinesByNode: Record<string, { commands: any[][], originalIndices: number[] }> = {};
+  private async updateRedisClusterSlots() {
     const clusterSlots = await this.cluster('SHARDS') as [string, [number, number][], string, [string, string]][];
-    const nodeSlotRanges = clusterSlots.flatMap(([, slotRanges, , [node]]) => {
+    this.nodeSlotRanges = clusterSlots.flatMap(([, slotRanges, , [node]]) => {
       // slotRanges can contain multiple start-end pairs
       const ranges = [];
       for (let i = 0; i < slotRanges.length; i += 2) {
@@ -17,13 +17,30 @@ class ExtendedClusterRedis extends Cluster {
       }
       return ranges;
     });
+  }
+
+  async clusterPipeline(commands: [string, ...any][]): Promise<[error: Error | null, result: unknown][] | null> {
+    try {
+      let res = await this.executePipelineForCluster(commands);
+      return res;
+    } catch (error) {
+      if (error instanceof Error && error.message.includes("slots")) {
+        await this.updateRedisClusterSlots();
+        return this.executePipelineForCluster(commands);
+      }
+      throw error;
+    }
+  }
+
+  private async executePipelineForCluster(commands: any[][]): Promise<[error: Error | null, result: unknown][] | null> {
+    const pipelinesByNode: Record<string, { commands: any[][], originalIndices: number[] }> = {};
 
     // Group commands by node
     for (let i = 0; i < commands.length; i++) {
       const command = commands[i];
       const key = command[1];
       const slot = this.calculateSlot(key);
-      const node = this.findNodeForSlot(nodeSlotRanges, slot);
+      const node = this.findNodeForSlot(this.nodeSlotRanges, slot);
       if (!pipelinesByNode[node]) {
         pipelinesByNode[node] = { commands: [], originalIndices: [] };
       }
@@ -33,7 +50,7 @@ class ExtendedClusterRedis extends Cluster {
 
     // Execute pipelines per node
     const results = [];
-    for (const node in pipelinesByNode) {
+    const promises = Object.keys(pipelinesByNode).map(async (node) => {
       const { commands, originalIndices } = pipelinesByNode[node];
       const pipeline = this.pipeline();
       commands.forEach(cmd => pipeline[cmd[0]](...cmd.slice(1)));
@@ -42,8 +59,8 @@ class ExtendedClusterRedis extends Cluster {
         const originalIndex = originalIndices[localIndex];
         results[originalIndex] = result;
       });
-    }
-
+    });
+    await Promise.all(promises);
     return results;
   }
 
