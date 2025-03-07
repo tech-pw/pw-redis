@@ -6,9 +6,9 @@ This is a custom wrapper around the [ioredis](https://www.npmjs.com/package/iore
 
 ### Problem at PhysicsWallah
 
-At PhysicsWallah, we needed an efficient way to handle Redis Cluster commands when multiple Redis nodes were involved. The standard Redis pipeline approach didn't take slot distribution into account, leading to inefficiencies and complexity. We developed this library to:
+At PhysicsWallah, we needed an efficient way to handle Redis Cluster commands when multiple Redis nodes were involved. The standard ioredis pipeline approach didn't take slot distribution into account, leading to inefficiencies and complexity. We developed this library to:
 
-- Simplify the execution of multiple Redis commands across a Redis Cluster.
+- Enables the execution of Redis pipeline commands across a Redis Cluster.
 - Maintain the order of results while executing commands in parallel.
 - Make our Redis Cluster usage more efficient and less error-prone.
 
@@ -112,29 +112,6 @@ The `clusterPipeline` method takes an array of Redis commands (e.g., [['set', 'k
 - **Slot Calculation**: Redis Cluster distributes keys across multiple nodes using hash slots. The library automatically determines the correct node for each key and groups commands accordingly, using the Redis `SHARDS` method to map and store the slot-to-node mapping in memory. In case of any slot changes in Redis, detected through error handling, the slot ranges are refreshed dynamically.
 - **Pipeline Execution**: Once the commands are grouped by node, they are executed in parallel, improving performance when processing large sets of commands.
 - **Result Handling**: The results from each node are collected and returned in the same order as the original set of commands, ensuring consistency and ease of use.
-
-
-- **Slot Calculation**: Redis Cluster splits keys across multiple nodes using slots. This library automatically calculates which node each key belongs to and groups the commands accordingly.
-- **Pipeline Execution**: Once the commands are grouped by node, they are executed in parallel on each node, ensuring better performance when dealing with large pipelines.
-- **Result Handling**: Results from each node are merged and returned in the same order as the original commands.
-
-## Redis and Cluster
-
-All the normal ioredis Redis and Cluster functionality remains available. This library only adds the `clusterPipeline` method to Cluster.
-
-## Why This Library?
-
-### Problem at PhysicsWallah Private Limited
-
-At PhysicsWallah Private Limited, we needed an efficient way to handle Redis Cluster commands when multiple Redis nodes were involved. The standard Redis pipeline approach didn’t take slot distribution into account, leading to inefficiencies and complexity. We developed this library to:
-
-- Simplify the execution of multiple Redis commands across a Redis Cluster.
-- Maintain the order of results while executing commands in parallel.
-- Make our Redis Cluster usage more efficient and less error-prone.
-
-### How We Solve It
-
-By adding the `clusterPipeline` method, we ensure commands are distributed to the appropriate Redis node, executed in parallel, and results are returned in the correct order. This approach eliminates the need to manually manage slot calculations and node selection.
 
 ## Performance Improvement in Production
 
