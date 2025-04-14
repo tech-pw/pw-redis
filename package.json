@@ -1,8 +1,9 @@
 {
   "name": "@pw-tech/ioredis",
   "version": "1.0.0",
-  "description": "A robust Redis cluster pipeline helper for Node.js, optimizing pipeline execution for ioredis with multi-node clustering support.",
+  "description": "A lightweight wrapper for ioredis that offers seamless support for pipeline commands within a Redis cluster topology.",
   "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "scripts": {
     "test": "jest",
     "build": "rm -rf dist && tsc"
@@ -15,7 +16,8 @@
     "nodejs"
   ],
   "author": "Sarfaraz Ahmed K L <https://github.com/sarfarazahmedkl>",
-  "license": "ISC",
+  "license": "MIT",
+  "homepage": "https://github.com/tech-pw/pw-redis#readme",
   "dependencies": {
     "ioredis": "^5.4.2"
   },
@@ -23,5 +25,8 @@
     "@types/node": "^22.13.1",
     "ts-node": "^10.9.2",
     "typescript": "^5.7.3"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }
