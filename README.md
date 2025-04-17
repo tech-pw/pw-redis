@@ -1,4 +1,4 @@
-# Redis Cluster Pipeline Library with <img src="./images/pw.jpg" alt="drawing" width="30"/>
+# Redis Cluster Pipeline Library with <img src="https://github.com/tech-pw/pw-redis/blob/main/images/pw.jpg" alt="drawing" width="30"/>
 
 This is a custom wrapper around the [ioredis](https://www.npmjs.com/package/ioredis) that adds a new method `clusterPipeline` to handle Redis Cluster pipelines more efficiently.
 
@@ -138,13 +138,13 @@ After implementing partial pipeline optimization, we observed significant API re
 
 #### Latency Comparison
 <p align="center">
-  <img src="./images/api2_avg_latency.png" alt="API 2 Avg Latency Comparison" width="80%"/>
+  <img src="https://github.com/tech-pw/pw-redis/blob/main/images/api2_avg_latency.png" alt="API 2 Avg Latency Comparison" width="80%"/>
 </p>
 <p align="center">
-  <img src="./images/api2_p95_latency.png" alt="API 2 P95 Latency Comparison" width="80%"/>
+  <img src="https://github.com/tech-pw/pw-redis/blob/main/images/api2_p95_latency.png" alt="API 2 P95 Latency Comparison" width="80%"/>
 </p>
 <p align="center">
-  <img src="./images/api2_p99_latency.png" alt="API 2 P99 Latency Comparison" width="80%"/>
+  <img src="https://github.com/tech-pw/pw-redis/blob/main/images/api2_p99_latency.png" alt="API 2 P99 Latency Comparison" width="80%"/>
 </p>
 
 ## Key Learnings & Next Steps
