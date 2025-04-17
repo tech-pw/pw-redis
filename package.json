@@ -1,5 +1,5 @@
 {
-  "name": "@pw-tech/pwredis",
+  "name": "@pw-tech/pw-redis",
   "version": "1.0.0",
   "description": "A lightweight wrapper for ioredis that offers seamless support for pipeline commands within a Redis cluster topology.",
   "main": "dist/index.js",

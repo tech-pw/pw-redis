@@ -33,16 +33,10 @@ Our custom library resolves this issue by enabling efficient and reliable pipeli
 
 ## Installation
 
-To install the library, use npm or yarn to add it to your project.
+To install the library, use npm to add it to your project.
 
 ```bash
 npm install @pw-tech/pw-redis
-```
-
-Or with yarn:
-
-```bash
-yarn add @pw-tech/pw-redis
 ```
 
 ## Usage
@@ -126,13 +120,13 @@ After implementing partial pipeline optimization, we observed significant API re
 
 #### Latency Comparison
 <p align="center">
-  <img src="./images/api1_avg_latency.png" alt="API 2 Avg Latency Comparison" width="80%"/>
+  <img src="https://github.com/tech-pw/pw-redis/blob/main/images/api1_avg_latency.png" alt="API 1 Avg Latency Comparison" width="80%"/>
 </p>
 <p align="center">
-  <img src="./images/api1_p95_latency.png" alt="API 2 P95 Latency Comparison" width="80%"/>
+  <img src="https://github.com/tech-pw/pw-redis/blob/main/images/api1_p95_latency.png" alt="API 1 P95 Latency Comparison" width="80%"/>
 </p>
 <p align="center">
-  <img src="./images/api1_p99_latency.png" alt="API 2 P99 Latency Comparison" width="80%"/>
+  <img src="https://github.com/tech-pw/pw-redis/blob/main/images/api1_p99_latency.png" alt="API 1 P99 Latency Comparison" width="80%"/>
 </p>
 
 ### API 2
