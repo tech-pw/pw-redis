@@ -120,13 +120,13 @@ After implementing partial pipeline optimization, we observed significant API re
 
 #### Latency Comparison
 <p align="center">
-  <img src="https://github.com/tech-pw/pw-redis/blob/main/images/api1_avg_latency.png" alt="API 1 Avg Latency Comparison" width="80%"/>
+  <img src="https://github.com/tech-pw/pw-redis/blob/main/images/api1_avg_latency.png" alt="API 1 Avg Latency Comparison" width="80%" style="border: 1px solid #ccc; border-radius: 8px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);"/>
 </p>
 <p align="center">
-  <img src="https://github.com/tech-pw/pw-redis/blob/main/images/api1_p95_latency.png" alt="API 1 P95 Latency Comparison" width="80%"/>
+  <img src="https://github.com/tech-pw/pw-redis/blob/main/images/api1_p95_latency.png" alt="API 1 P95 Latency Comparison" width="80%" style="border: 1px solid #ccc; border-radius: 8px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);"/>
 </p>
 <p align="center">
-  <img src="https://github.com/tech-pw/pw-redis/blob/main/images/api1_p99_latency.png" alt="API 1 P99 Latency Comparison" width="80%"/>
+  <img src="https://github.com/tech-pw/pw-redis/blob/main/images/api1_p99_latency.png" alt="API  P99 Latency Comparison" width="80%" style="border: 1px solid #ccc; border-radius: 8px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);"/>
 </p>
 
 ### API 2
@@ -138,13 +138,13 @@ After implementing partial pipeline optimization, we observed significant API re
 
 #### Latency Comparison
 <p align="center">
-  <img src="https://github.com/tech-pw/pw-redis/blob/main/images/api2_avg_latency.png" alt="API 2 Avg Latency Comparison" width="80%"/>
+  <img src="https://github.com/tech-pw/pw-redis/blob/main/images/api2_avg_latency.png" alt="API 2 Avg Latency Comparison" width="80%" style="border: 1px solid #ccc; border-radius: 8px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);"/>
 </p>
 <p align="center">
-  <img src="https://github.com/tech-pw/pw-redis/blob/main/images/api2_p95_latency.png" alt="API 2 P95 Latency Comparison" width="80%"/>
+  <img src="https://github.com/tech-pw/pw-redis/blob/main/images/api2_p95_latency.png" alt="API 2 P95 Latency Comparison" width="80%" style="border: 1px solid #ccc; border-radius: 8px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);"/>
 </p>
 <p align="center">
-  <img src="https://github.com/tech-pw/pw-redis/blob/main/images/api2_p99_latency.png" alt="API 2 P99 Latency Comparison" width="80%"/>
+  <img src="https://github.com/tech-pw/pw-redis/blob/main/images/api2_p99_latency.png" alt="API 2 P99 Latency Comparison" width="80%" style="border: 1px solid #ccc; border-radius: 8px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);"/>
 </p>
 
 ## Key Learnings & Next Steps
