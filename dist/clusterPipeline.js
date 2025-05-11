@@ -3,104 +3,123 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.Cluster = exports.Redis = void 0;
 const ioredis_1 = require("ioredis");
 exports.Redis = ioredis_1.default;
+const calculateSlot = require('cluster-key-slot');
+/**
+ * Extended Redis Cluster class that handles pipeline operations more efficiently.
+ * Specifically handles cases where commands need to be redirected due to:
+ * 1. Cluster resharding/rebalancing
+ * 2. Master-replica failover
+ * 3. Slot migration between nodes
+ * 4. Adding/removing nodes from cluster
+ */
 class ExtendedClusterRedis extends ioredis_1.Cluster {
-    constructor() {
-        super(...arguments);
-        this.nodeSlotRanges = [];
-    }
-    async updateRedisClusterSlots() {
-        const clusterSlots = await this.cluster('SHARDS');
-        this.nodeSlotRanges = clusterSlots.flatMap(([, slotRanges, , [node]]) => {
-            // slotRanges can contain multiple start-end pairs
-            const ranges = [];
-            for (let i = 0; i < slotRanges.length; i += 2) {
-                ranges.push({
-                    node: node[1],
-                    startSlot: slotRanges[i],
-                    endSlot: slotRanges[i + 1],
-                });
-            }
-            return ranges;
-        });
-    }
+    /**
+     * Executes multiple Redis commands in a pipeline across cluster nodes
+     * @param commands Array of Redis commands to execute
+     * @returns Array of [error, result] pairs matching the input command order
+     */
     async clusterPipeline(commands) {
-        try {
-            let res = await this.executePipelineForCluster(commands);
-            return res;
-        }
-        catch (error) {
-            if (error instanceof Error && error.message.includes("slots")) {
-                await this.updateRedisClusterSlots();
-                return this.executePipelineForCluster(commands);
-            }
-            throw error;
-        }
+        return this.executePipelineForCluster(commands);
     }
+    /**
+     * Retries commands that received redirection responses (ASK or MOVED)
+     * This happens when:
+     * - A slot is being migrated between nodes
+     * - Cluster is rebalancing
+     * - Node roles have changed (e.g., failover)
+     *
+     * @param redirectedCommands Commands that need to be retried
+     * @param results Array to store final results
+     */
+    async retryRedirectedCommands(redirectedCommands, results) {
+        if (redirectedCommands.length === 0)
+            return;
+        const retryPromises = redirectedCommands.map(async ({ command, index }) => {
+            try {
+                const [cmdName, ...args] = command;
+                if (typeof this[cmdName] === 'function') {
+                    // Individual retries use ioredis's built-in redirection handling
+                    const retryResult = await this[cmdName](...args);
+                    results[index] = [null, retryResult];
+                }
+                else {
+                    results[index] = [new Error(`Invalid command: ${cmdName}`), null];
+                }
+            }
+            catch (error) {
+                results[index] = [error instanceof Error ? error : new Error(String(error)), null];
+            }
+        });
+        await Promise.all(retryPromises);
+    }
+    /**
+     * Executes pipeline commands across cluster nodes, handling redirections
+     * Pipeline execution can fail or require retries when:
+     * 1. Cluster topology changes (node addition/removal)
+     * 2. Slot migrations are in progress
+     * 3. Failover occurs during execution
+     * 4. Network issues cause temporary node unavailability
+     */
     async executePipelineForCluster(commands) {
+        // Group commands by node based on key slots
         const pipelinesByNode = {};
-        // Group commands by node
+        // Map commands to nodes using hash slots
         for (let i = 0; i < commands.length; i++) {
             const command = commands[i];
             const key = command[1];
-            const slot = this.calculateSlot(key);
-            const node = this.findNodeForSlot(this.nodeSlotRanges, slot);
+            const slot = calculateSlot(key);
+            const node = this.slots[slot][0];
             if (!pipelinesByNode[node]) {
                 pipelinesByNode[node] = { commands: [], originalIndices: [] };
             }
             pipelinesByNode[node].commands.push(command);
             pipelinesByNode[node].originalIndices.push(i);
         }
-        // Execute pipelines per node
-        const results = [];
+        // Track results and commands needing redirection
+        const results = new Array(commands.length);
+        const redirectedCommands = [];
+        // Execute pipelines in parallel for each node
         const promises = Object.keys(pipelinesByNode).map(async (node) => {
             const { commands, originalIndices } = pipelinesByNode[node];
             const pipeline = this.pipeline();
+            // Add commands to pipeline
             commands.forEach(cmd => pipeline[cmd[0]](...cmd.slice(1)));
+            // Execute pipeline for this node
             const nodeResult = await pipeline.exec();
+            // Process results and identify redirections
             nodeResult.forEach((result, localIndex) => {
                 const originalIndex = originalIndices[localIndex];
-                results[originalIndex] = result;
-            });
-        });
-        await Promise.all(promises);
-        return results;
-    }
-    calculateSlot(key) {
-        if (key == null) {
-            return 0;
-        }
-        key = String(key);
-        // Handle hash tag (keys inside {})
-        const hashTagMatch = key.match(/\{(.+?)\}/);
-        if (hashTagMatch) {
-            key = hashTagMatch[1];
-        }
-        if (key.trim().length === 0) {
-            return 0;
-        }
-        return this.hashCRC16(key) % 16384;
-    }
-    hashCRC16(str) {
-        let crc = 0;
-        const polynomial = 0x1021;
-        const buffer = Buffer.from(str, 'utf8');
-        for (let byte of buffer) {
-            crc ^= byte << 8;
-            for (let i = 0; i < 8; i++) {
-                if (crc & 0x8000) {
-                    crc = (crc << 1) ^ polynomial;
+                if (this.isRedirectionResponse(result)) {
+                    // Queue command for retry if it needs redirection
+                    redirectedCommands.push({
+                        command: commands[localIndex],
+                        index: originalIndex
+                    });
                 }
                 else {
-                    crc <<= 1;
+                    // Store successful results immediately
+                    results[originalIndex] = result;
                 }
-                crc &= 0xFFFF;
-            }
-        }
-        return crc;
+            });
+        });
+        // Wait for all pipeline executions to complete
+        await Promise.all(promises);
+        // Handle any commands that needed redirection
+        await this.retryRedirectedCommands(redirectedCommands, results);
+        return results;
     }
-    findNodeForSlot(nodeSlotRanges, slot) {
-        const matchingRange = nodeSlotRanges.find(range => slot >= range.startSlot && slot <= range.endSlot);
-        return matchingRange ? matchingRange.node : null;
+    /**
+     * Checks if a Redis response indicates command redirection
+     * Redirection occurs when:
+     * - ASK response: Slot is being migrated
+     * - MOVED response: Slot mapping has changed
+     * These responses contain the command details and target node
+     */
+    isRedirectionResponse(result) {
+        return Array.isArray(result) &&
+            result[0] &&
+            typeof result[0] === 'object' &&
+            'command' in result[0];
     }
 }
 exports.Cluster = ExtendedClusterRedis;
